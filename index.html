@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Priskalkylator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        label, select, input {
+            display: block;
+            margin-top: 10px;
+        }
+        button {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Logotyp högst upp, centrerad -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="logo.png" alt="Taxi Norra Uppland logotyp" width="200">
+        <p style="font-weight: bold;">Taxi Norra Uppland</p>
+    </div>
+
+    <h1>Beräkna pris för körning</h1>
+
+    <form id="prisForm">
+        <label for="tid">Tid:</label>
+        <select id="tid">
+            <option value="dag">Dag</option>
+            <option value="natt">Natt</option>
+            <option value="storhelg">Storhelg</option>
+        </select>
+
+        <label for="bil">Biltyp:</label>
+        <select id="bil">
+            <option value="liten">Liten bil</option>
+            <option value="stor">Stor bil</option>
+        </select>
+
+        <label for="typ">Typ av körning:</label>
+        <select id="typ">
+            <option value="privat">Privat</option>
+            <option value="fardtjanst">Färdtjänst</option>
+        </select>
+
+        <label for="minuter">Körtid (minuter):</label>
+        <input type="number" id="minuter" min="0">
+
+        <label for="km">Avstånd (km):</label>
+        <input type="number" id="km" min="0" step="0.1">
+
+        <button type="button" onclick="beraknaPris()">Beräkna pris</button>
+        <button type="button" onclick="nollstall()">Nollställ</button>
+    </form>
+
+    <h2 id="resultat"></h2>
+
+    <script>
+        // Ladda senaste värden automatiskt
+        window.onload = function () {
+            if (localStorage.getItem("prisdata")) {
+                const data = JSON.parse(localStorage.getItem("prisdata"));
+                document.getElementById("tid").value = data.tid;
+                document.getElementById("bil").value = data.bil;
+                document.getElementById("typ").value = data.typ;
+                document.getElementById("minuter").value = data.minuter;
+                document.getElementById("km").value = data.km;
+                beraknaPris();
+            }
+        };
+
+        function beraknaPris() {
+            const tid = document.getElementById("tid").value;
+            const bil = document.getElementById("bil").value;
+            const typ = document.getElementById("typ").value;
+            const minuter = parseFloat(document.getElementById("minuter").value);
+            const km = parseFloat(document.getElementById("km").value);
+
+            if (isNaN(minuter) || isNaN(km)) {
+                document.getElementById("resultat").innerText = "Fyll i både minuter och kilometer.";
+                return;
+            }
+
+            let start = 0;
+            let prisPerKm = 0;
+            let prisPerTimme = 0;
+
+            if (typ === "fardtjanst") {
+                if (bil === "liten") {
+                    start = 86.71;
+                    prisPerKm = 22.09;
+                    prisPerTimme = 662.70;
+                } else {
+                    start = 250.92;
+                    prisPerKm = 28.52;
+                    prisPerTimme = 855.60;
+                }
+            } else if (typ === "privat") {
+                if (tid === "storhelg") {
+                    if (bil === "liten") {
+                        start = 88.00;
+                        prisPerKm = 16.20;
+                        prisPerTimme = 584.00;
+                    } else {
+                        start = 221.00;
+                        prisPerKm = 19.01;
+                        prisPerTimme = 584.00;
+                    }
+                } else if (tid === "natt") {
+                    if (bil === "liten") {
+                        start = 81.00;
+                        prisPerKm = 15.13;
+                        prisPerTimme = 544.00;
+                    } else {
+                        start = 201.00;
+                        prisPerKm = 17.28;
+                        prisPerTimme = 544.00;
+                    }
+                } else if (tid === "dag") {
+                    if (bil === "liten") {
+                        start = 75.00;
+                        prisPerKm = 13.28;
+                        prisPerTimme = 481.00;
+                    } else {
+                        start = 168.00;
+                        prisPerKm = 15.55;
+                        prisPerTimme = 481.00;
+                    }
+                }
+            }
+
+            const prisTid = (prisPerTimme / 60) * minuter;
+            const prisStracka = prisPerKm * km;
+            const total = start + prisTid + prisStracka;
+
+            // Visa resultat
+            document.getElementById("resultat").innerText =
+                `Totalpris: ${total.toFixed(2)} kr`;
+
+            // Spara inmatning i webbläsaren
+            const data = {
+                tid,
+                bil,
+                typ,
+                minuter,
+                km
+            };
+            localStorage.setItem("prisdata", JSON.stringify(data));
+        }
+
+        function nollstall() {
+            document.getElementById("prisForm").reset(); // Töm formuläret
+            document.getElementById("resultat").innerText = ""; // Töm resultat
+            localStorage.removeItem("prisdata"); // Rensa sparad data
+        }
+    </script>
+</body>
+</html>
